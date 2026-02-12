@@ -4,33 +4,33 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file='.env', extra='ignore')
 
-    DATABASE_URL: str = "postgresql+asyncpg://jarvis:jarvis@localhost:5432/jarvis"
-    REDIS_URL: str = "redis://localhost:6379/0"
+    DATABASE_URL: str = ''
+    REDIS_URL: str = 'redis://localhost:6379/0'
 
-    JWT_SECRET_KEY: str = "CHANGE_ME"
-    JWT_ALGORITHM: str = "HS256"
+    JWT_SECRET_KEY: str = ''
+    JWT_ALGORITHM: str = 'HS256'
     JWT_EXPIRE_HOURS: int = 24
 
-    GEMINI_API_KEY: str = ""
-    DEEPSEEK_API_KEY: str = ""
-    GROQ_API_KEY: str = ""
-    OPENROUTER_API_KEY: str = ""
-    XAI_API_KEY: str = ""
-    OPENAI_API_KEY: str = ""
-    ANTHROPIC_API_KEY: str = ""
+    GEMINI_API_KEY: str = ''
+    DEEPSEEK_API_KEY: str = ''
+    GROQ_API_KEY: str = ''
+    OPENROUTER_API_KEY: str = ''
+    XAI_API_KEY: str = ''
+    OPENAI_API_KEY: str = ''
+    ANTHROPIC_API_KEY: str = ''
 
-    VERTEX_PROJECT_ID: str = ""
-    VERTEX_LOCATION: str = ""
-    VERTEX_SEARCH_DATASTORE_ID: str = ""
+    VERTEX_PROJECT_ID: str = ''
+    VERTEX_LOCATION: str = ''
+    VERTEX_SEARCH_DATASTORE_ID: str = ''
 
-    DEMO_UNLOCK_CODE: str = ""
-    BOOTSTRAP_ADMIN_CODE: str = ""
-    FULL_TELEGRAM_IDS: str = ""
-    DEMO_TELEGRAM_IDS: str = ""
+    DEMO_UNLOCK_CODE: str = ''
+    BOOTSTRAP_ADMIN_CODE: str = ''
+    FULL_TELEGRAM_IDS: str = ''
+    DEMO_TELEGRAM_IDS: str = ''
 
-    LOG_LEVEL: str = "INFO"
+    LOG_LEVEL: str = 'INFO'
     LOG_JSON: bool = True
 
     DEMO_GROK_DAILY: int = 5
@@ -50,12 +50,12 @@ class Settings(BaseSettings):
     NOTEBOOK_ENABLED: bool = True
     ADMIN_ENABLED: bool = True
 
-    POSTGRES_PASSWORD: str = "jarvis"
-    DB_PASSWORD: str = "jarvis"
-    TELEGRAM_BOT_TOKEN: str = ""
-    BACKEND_URL: str = "http://localhost:8000"
-    ALLOWED_USER_IDS: str = ""
-    ADMIN_USER_IDS: str = ""
+    POSTGRES_PASSWORD: str = ''
+    DB_PASSWORD: str = ''
+    TELEGRAM_BOT_TOKEN: str = ''
+    BACKEND_URL: str = 'http://localhost:8000'
+    ALLOWED_USER_IDS: str = ''
+    ADMIN_USER_IDS: str = ''
 
 
 @lru_cache(maxsize=1)

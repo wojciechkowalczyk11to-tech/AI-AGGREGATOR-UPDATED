@@ -1,5 +1,6 @@
 services:
   backend:
+    restart: unless-stopped
     build: ../backend
     env_file:
       - ../.env
@@ -20,6 +21,7 @@ services:
       - jarvis_net
 
   telegram_bot:
+    restart: unless-stopped
     build: ../telegram_bot
     env_file:
       - ../.env
@@ -30,6 +32,7 @@ services:
       - jarvis_net
 
   postgres:
+    restart: unless-stopped
     image: postgres:16-alpine
     environment:
       POSTGRES_DB: jarvis
@@ -46,6 +49,7 @@ services:
       - jarvis_net
 
   redis:
+    restart: unless-stopped
     image: redis:7-alpine
     command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
     healthcheck:

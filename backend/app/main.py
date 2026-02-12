@@ -1,42 +1,62 @@
 from __future__ import annotations
 
+import logging
 from contextlib import asynccontextmanager
-from datetime import UTC, datetime
+from datetime import datetime, timezone
+from typing import AsyncGenerator
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from redis.asyncio import Redis
 
-from backend.app.api.v1.router import api_router
-from backend.app.core.config import get_settings
-from backend.app.core.logging_config import setup_logging
-from backend.app.db.session import init_db
+from app.api.v1.router import api_router
+from app.core.config import get_settings
+from app.core.exceptions import JarvisBaseError
+from app.core.logging_config import setup_logging
+from app.db.session import get_engine, init_db
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     settings = get_settings()
     setup_logging(level=settings.LOG_LEVEL, json_mode=settings.LOG_JSON)
-    app.state.started_at = datetime.now(tz=UTC)
+    logger.info('Backend starting up')
 
-    redis_client = Redis.from_url(settings.REDIS_URL, decode_responses=True)
-    app.state.redis = redis_client
+    app.state.started_at = datetime.now(tz=timezone.utc)
 
-    await init_db()
     try:
+        redis_client = Redis.from_url(settings.REDIS_URL, decode_responses=True)
         await redis_client.ping()
+        app.state.redis = redis_client
+        logger.info('Redis connected')
     except Exception:
-        pass
+        logger.warning('Redis unavailable at startup')
+        app.state.redis = None
 
     try:
-        yield
-    finally:
-        await redis_client.aclose()
+        await init_db()
+        logger.info('Database initialized')
+    except Exception:
+        logger.error('Database initialization failed', exc_info=True)
+        raise
+
+    yield
+
+    if app.state.redis is not None:
+        await app.state.redis.aclose()
+    engine = get_engine()
+    await engine.dispose()
+    logger.info('Backend shut down')
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="Ai-Aggregator Backend", version="0.1.0", lifespan=lifespan)
-    app.include_router(api_router, prefix="/api/v1")
+    app = FastAPI(title='JARVIS AI Aggregator', version='0.1.0', lifespan=lifespan)
+    app.include_router(api_router, prefix='/api/v1')
+
+    @app.exception_handler(JarvisBaseError)
+    async def jarvis_error_handler(request: Request, exc: JarvisBaseError) -> JSONResponse:
+        return JSONResponse(status_code=exc.status_code, content={'detail': exc.detail})
+
     return app
-
-
-app = create_app()

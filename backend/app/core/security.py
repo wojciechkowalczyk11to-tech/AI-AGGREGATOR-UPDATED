@@ -1,17 +1,17 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from jose import JWTError, jwt
 
-from backend.app.core.config import get_settings
+from app.core.config import get_settings
 
 
 def create_access_token(data: dict[str, Any], expires_delta: timedelta | None = None) -> str:
     settings = get_settings()
     to_encode = data.copy()
-    expire = datetime.now(tz=UTC) + (expires_delta or timedelta(hours=settings.JWT_EXPIRE_HOURS))
+    expire = datetime.now(tz=timezone.utc) + (expires_delta or timedelta(hours=settings.JWT_EXPIRE_HOURS))
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
