@@ -105,28 +105,26 @@ class PaymentService:
         now_utc = datetime.now(timezone.utc)
         expires_at = user.subscription_expires_at
 
-        if expires_at is not None and expires_at < now_utc:
-            try:
-                user.subscription_tier = "free"
-                user.subscription_expires_at = None
-                await db.commit()
-                await db.refresh(user)
-            except Exception:
-                await db.rollback()
-                raise
+        if expires_at is not None:
+            if expires_at.tzinfo is None:
+                expires_at = expires_at.replace(tzinfo=timezone.utc)
 
-        active = (
-            user.subscription_tier != "free"
-            and user.subscription_expires_at is not None
-            and user.subscription_expires_at >= now_utc
-        )
+            if expires_at < now_utc:
+                try:
+                    user.subscription_tier = "free"
+                    user.subscription_expires_at = None
+                    await db.commit()
+                    await db.refresh(user)
+                except Exception:
+                    await db.rollback()
+                    raise
+
+        active = user.subscription_tier != "free" and expires_at is not None and expires_at >= now_utc
         tier = user.subscription_tier
         return {
             "active": active,
             "tier": tier,
-            "expires_at": user.subscription_expires_at.isoformat()
-            if user.subscription_expires_at is not None
-            else None,
+            "expires_at": expires_at.isoformat() if expires_at is not None else None,
             "plan_details": PLANS.get(tier),
         }
 

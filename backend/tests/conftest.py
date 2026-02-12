@@ -24,6 +24,7 @@ os.environ.update(
         "DEMO_UNLOCK_CODE": "314159",
         "FULL_TELEGRAM_IDS": "111111",
         "DEMO_TELEGRAM_IDS": "222222",
+        "DB_CREATE_ALL": "1",
     }
 )
 
@@ -67,7 +68,7 @@ async def test_session(test_engine: AsyncEngine) -> AsyncGenerator[AsyncSession,
 
 
 @pytest_asyncio.fixture
-async def async_client() -> AsyncGenerator[AsyncClient, None]:
+async def async_client(test_engine: AsyncEngine) -> AsyncGenerator[AsyncClient, None]:
     from app.main import create_app
 
     app = create_app()

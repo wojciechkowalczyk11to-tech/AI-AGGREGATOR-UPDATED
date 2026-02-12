@@ -1,33 +1,44 @@
 from __future__ import annotations
-import httpx
+
 import logging
 from typing import Any
 
+import httpx
+
 logger = logging.getLogger(__name__)
+
 
 class BackendServiceError(Exception):
     """Base error for backend communication."""
 
+
 class AuthenticationError(BackendServiceError):
     """401 from backend."""
 
+
 class RateLimitError(BackendServiceError):
     """429 from backend."""
+
     def __init__(self, message: str = "Rate limited", retry_after: int | None = None):
         super().__init__(message)
         self.retry_after = retry_after
 
+
 class ClientError(BackendServiceError):
     """4xx (except 401, 429) from backend."""
+
 
 class BackendTimeoutError(BackendServiceError):
     """Timeout connecting to backend."""
 
+
 class BackendUnavailableError(BackendServiceError):
     """Cannot connect to backend."""
 
+
 class AllProvidersFailedError(BackendServiceError):
     """All providers in fallback chain failed."""
+
 
 class BaseService:
     def __init__(self, base_url: str, timeout: float = 60.0) -> None:

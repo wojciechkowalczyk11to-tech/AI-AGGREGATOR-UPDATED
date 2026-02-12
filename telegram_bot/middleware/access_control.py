@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from telegram import Update
-from telegram.ext import ContextTypes
-
 from config import BotSettings
 from services.backend_client import BackendClient
+from telegram import Update
+from telegram.ext import ContextTypes
 
 
 async def access_gate(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:

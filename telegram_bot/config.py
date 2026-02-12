@@ -1,7 +1,15 @@
 from __future__ import annotations
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field
+
 import os
+
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def _get_default_backend_url() -> str:
+    if os.getenv("RUNNING_IN_DOCKER", "0") == "1":
+        return "http://backend:8000"
+    return "http://localhost:8000"
 
 
 class BotSettings(BaseSettings):
@@ -12,9 +20,7 @@ class BotSettings(BaseSettings):
     webhook_path: str = Field("webhook", description="URL path for webhooks")
     webhook_secret_token: str = Field("", description="Secret token for webhook")
     backend_url: str = Field(
-        default_factory=lambda: "http://backend:8000"
-        if os.getenv("RUNNING_IN_DOCKER", "0") == "1"
-        else "http://localhost:8000",
+        default_factory=_get_default_backend_url,
         description="URL of the backend",
     )
     allowed_user_ids: list[int] = Field(default_factory=list, description="Allowed IDs")
@@ -28,9 +34,7 @@ class BotSettings(BaseSettings):
     )
     log_level: str = "INFO"
     log_json: bool = True
-    model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", extra="ignore"
-    )
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     @property
     def is_webhook_mode(self) -> bool:

@@ -33,9 +33,7 @@ async def get_current_user(
             raise ValueError("Brak pola sub")
         user_id = uuid.UUID(str(subject))
     except Exception as exc:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Nieprawidłowy token"
-        ) from exc
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Nieprawidłowy token") from exc
 
     try:
         result = await db.execute(select(User).where(User.id == user_id))
@@ -47,9 +45,7 @@ async def get_current_user(
         ) from exc
 
     if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Użytkownik nie istnieje"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Użytkownik nie istnieje")
 
     return user
 

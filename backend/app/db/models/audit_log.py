@@ -22,6 +22,4 @@ class AuditLog(Base):
     action: Mapped[str] = mapped_column(String(100), nullable=False)
     target: Mapped[str | None] = mapped_column(String(200), nullable=True)
     details: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)

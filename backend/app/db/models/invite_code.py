@@ -25,6 +25,4 @@ class InviteCode(Base):
     created_by: Mapped[int] = mapped_column(BigInteger, nullable=False)
     consumed_by: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)

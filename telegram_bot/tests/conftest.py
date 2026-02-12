@@ -1,5 +1,8 @@
 from __future__ import annotations
-import pytest, os
+
+import pytest
+
+
 @pytest.fixture(autouse=True)
 def mock_env(monkeypatch):
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "t")

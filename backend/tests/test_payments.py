@@ -56,7 +56,10 @@ async def test_process_payment_activates_subscription(test_session) -> None:
     assert payment.stars_amount == 200
     assert user.subscription_tier == "pro"
     assert user.subscription_expires_at is not None
-    assert user.subscription_expires_at > datetime.now(timezone.utc)
+    expires_at = user.subscription_expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    assert expires_at > datetime.now(timezone.utc)
 
 
 @pytest.mark.asyncio

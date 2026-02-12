@@ -34,9 +34,7 @@ def _has_unique_constraint(model: type, name: str) -> bool:
 
 class TestUserModelSchema:
     def test_user_has_expected_columns(self) -> None:
-        assert {"id", "telegram_id", "role", "settings", "created_at", "last_seen_at"}.issubset(
-            _column_names(User)
-        )
+        assert {"id", "telegram_id", "role", "settings", "created_at", "last_seen_at"}.issubset(_column_names(User))
 
     def test_user_has_telegram_id_index(self) -> None:
         assert "ix_users_telegram_id" in _index_names(User)
@@ -51,9 +49,7 @@ class TestUserModelSchema:
 
 class TestSessionModelSchema:
     def test_session_has_expected_columns(self) -> None:
-        assert {"id", "user_id", "mode", "message_count", "last_active_at"}.issubset(
-            _column_names(ChatSession)
-        )
+        assert {"id", "user_id", "mode", "message_count", "last_active_at"}.issubset(_column_names(ChatSession))
 
     def test_session_has_user_index(self) -> None:
         assert "ix_sessions_user_id" in _index_names(ChatSession)
@@ -64,9 +60,7 @@ class TestSessionModelSchema:
 
 class TestMessageModelSchema:
     def test_message_has_expected_columns(self) -> None:
-        assert {"id", "session_id", "role", "content", "metadata", "created_at"}.issubset(
-            _column_names(Message)
-        )
+        assert {"id", "session_id", "role", "content", "metadata", "created_at"}.issubset(_column_names(Message))
 
     def test_message_has_composite_index(self) -> None:
         assert "ix_messages_session_id_created_at" in _index_names(Message)
@@ -97,9 +91,7 @@ class TestLedgerModelSchema:
 
 class TestToolCounterModelSchema:
     def test_tool_counter_has_expected_columns(self) -> None:
-        assert {"id", "user_id", "date", "grok_calls", "total_cost_usd"}.issubset(
-            _column_names(ToolCounter)
-        )
+        assert {"id", "user_id", "date", "grok_calls", "total_cost_usd"}.issubset(_column_names(ToolCounter))
 
     def test_tool_counter_has_unique_constraint(self) -> None:
         assert _has_unique_constraint(ToolCounter, "uq_tool_counters_user_id_date")
@@ -110,9 +102,7 @@ class TestToolCounterModelSchema:
 
 class TestAuditLogModelSchema:
     def test_audit_log_has_expected_columns(self) -> None:
-        assert {"id", "actor_telegram_id", "action", "details", "created_at"}.issubset(
-            _column_names(AuditLog)
-        )
+        assert {"id", "actor_telegram_id", "action", "details", "created_at"}.issubset(_column_names(AuditLog))
 
     def test_audit_log_has_created_at_index(self) -> None:
         assert "ix_audit_logs_created_at" in _index_names(AuditLog)
@@ -123,9 +113,7 @@ class TestAuditLogModelSchema:
 
 class TestInviteCodeModelSchema:
     def test_invite_code_has_expected_columns(self) -> None:
-        assert {"id", "code_hash", "role", "expires_at", "uses_left", "created_at"}.issubset(
-            _column_names(InviteCode)
-        )
+        assert {"id", "code_hash", "role", "expires_at", "uses_left", "created_at"}.issubset(_column_names(InviteCode))
 
     def test_invite_code_code_hash_is_unique(self) -> None:
         assert InviteCode.__table__.c.code_hash.unique is True
@@ -136,9 +124,7 @@ class TestInviteCodeModelSchema:
 
 class TestRagItemModelSchema:
     def test_rag_item_has_expected_columns(self) -> None:
-        assert {"id", "user_id", "scope", "source_type", "status", "metadata"}.issubset(
-            _column_names(RagItem)
-        )
+        assert {"id", "user_id", "scope", "source_type", "status", "metadata"}.issubset(_column_names(RagItem))
 
     def test_rag_item_relationship_to_user_exists(self) -> None:
         assert RagItem.user.property.back_populates == "rag_items"
@@ -150,9 +136,7 @@ class TestRagItemModelSchema:
 
 class TestUserMemoryModelSchema:
     def test_user_memory_has_expected_columns(self) -> None:
-        assert {"id", "user_id", "key", "value", "created_at", "updated_at"}.issubset(
-            _column_names(UserMemory)
-        )
+        assert {"id", "user_id", "key", "value", "created_at", "updated_at"}.issubset(_column_names(UserMemory))
 
     def test_user_memory_has_unique_constraint(self) -> None:
         assert _has_unique_constraint(UserMemory, "uq_user_memories_user_id_key")

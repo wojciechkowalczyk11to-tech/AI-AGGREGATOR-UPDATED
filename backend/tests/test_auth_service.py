@@ -40,9 +40,7 @@ async def test_register_existing_user_idempotent(test_session) -> None:
 @pytest.mark.asyncio
 async def test_unlock_correct_code(test_session) -> None:
     await auth_service.register(telegram_id=777000, db=test_session)
-    out = await auth_service.unlock(
-        777000, get_settings().DEMO_UNLOCK_CODE, test_session, FakeRedis()
-    )
+    out = await auth_service.unlock(777000, get_settings().DEMO_UNLOCK_CODE, test_session, FakeRedis())
     assert out["success"] is True
 
 

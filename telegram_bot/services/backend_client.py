@@ -69,9 +69,7 @@ class BackendClient:
             }
 
     async def register(self, telegram_id: int) -> dict[str, Any]:
-        return await self._request(
-            "POST", "/api/v1/auth/register", json_data={"telegram_id": telegram_id}
-        )
+        return await self._request("POST", "/api/v1/auth/register", json_data={"telegram_id": telegram_id})
 
     async def unlock(self, telegram_id: int, code: str) -> dict[str, Any]:
         return await self._request(
@@ -104,9 +102,7 @@ class BackendClient:
         )
 
     async def get_usage(self, token: str, days: int) -> dict[str, Any]:
-        return await self._request(
-            "GET", "/api/v1/usage/summary", token=token, params={"days": days}
-        )
+        return await self._request("GET", "/api/v1/usage/summary", token=token, params={"days": days})
 
     async def get_limits(self, token: str) -> dict[str, Any]:
         return await self._request("GET", "/api/v1/usage/limits", token=token)
@@ -130,9 +126,7 @@ class BackendClient:
             json_data={"plan_id": plan_id},
         )
 
-    async def confirm_payment(
-        self, token: str, plan_id: str, stars: int, charge_id: str
-    ) -> dict[str, Any]:
+    async def confirm_payment(self, token: str, plan_id: str, stars: int, charge_id: str) -> dict[str, Any]:
         return await self._request(
             "POST",
             "/api/v1/payments/confirm",
@@ -142,3 +136,40 @@ class BackendClient:
 
     async def get_subscription(self, token: str) -> dict[str, Any]:
         return await self._request("GET", "/api/v1/payments/subscription", token=token)
+
+    async def get_admin_overview(self, token: str) -> dict[str, Any]:
+        return await self._request("GET", "/api/v1/admin/overview", token=token)
+
+    async def get_admin_users(self, token: str, limit: int = 50) -> dict[str, Any]:
+        return await self._request(
+            "GET",
+            "/api/v1/admin/users",
+            token=token,
+            params={"limit": limit},
+        )
+
+    async def admin_add_user(self, token: str, telegram_id: int, role: str) -> dict[str, Any]:
+        return await self._request(
+            "POST",
+            "/api/v1/admin/users",
+            token=token,
+            json_data={"telegram_id": telegram_id, "role": role},
+        )
+
+    async def admin_change_role(self, token: str, telegram_id: int, role: str) -> dict[str, Any]:
+        return await self._request(
+            "PUT",
+            f"/api/v1/admin/users/{telegram_id}/role",
+            token=token,
+            json_data={"role": role},
+        )
+
+    async def invite_validate(self, code: str) -> dict[str, Any]:
+        return await self._request("POST", "/api/v1/invite/validate", json_data={"code": code})
+
+    async def invite_consume(self, code: str, telegram_id: int) -> dict[str, Any]:
+        return await self._request(
+            "POST",
+            "/api/v1/invite/consume",
+            json_data={"code": code, "telegram_id": telegram_id},
+        )

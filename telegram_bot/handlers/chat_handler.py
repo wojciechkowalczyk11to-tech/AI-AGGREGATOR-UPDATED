@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from telegram import Update
-from telegram.ext import ContextTypes
-
 from middleware.access_control import access_gate
 from services.backend_client import BackendClient
+from telegram import Update
+from telegram.ext import ContextTypes
 
 MAX_MESSAGE_LEN = 4096
 
@@ -41,9 +40,7 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     result = await backend_client.chat(token, message.text, session_value, None, mode)
     if result.get("ok") is False:
-        error_message = str(
-            result.get("error", "Serwer chwilowo niedostępny. Spróbuj za chwilę.")
-        )
+        error_message = str(result.get("error", "Serwer chwilowo niedostępny. Spróbuj za chwilę."))
         if "niedostępny" in error_message.lower():
             await message.reply_text("Serwer chwilowo niedostępny. Spróbuj za chwilę.")
             return

@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, LabeledPrice, Update
-from telegram.ext import ContextTypes
-
 from middleware.access_control import access_gate
 from services.backend_client import BackendClient
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, LabeledPrice, Update
+from telegram.ext import ContextTypes
 
 
 async def handle_subscribe(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -45,14 +44,10 @@ async def handle_subscribe(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         return
 
     context.bot_data["plans_cache"] = plans
-    await message.reply_text(
-        "Wybierz plan subskrypcji:", reply_markup=InlineKeyboardMarkup(keyboard)
-    )
+    await message.reply_text("Wybierz plan subskrypcji:", reply_markup=InlineKeyboardMarkup(keyboard))
 
 
-async def handle_buy_callback(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-) -> None:
+async def handle_buy_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     if query is None or query.data is None:
         return
@@ -69,17 +64,13 @@ async def handle_buy_callback(
     backend_client = context.bot_data.get("backend_client")
     token = context.user_data.get("backend_token")
     if not isinstance(backend_client, BackendClient) or not isinstance(token, str):
-        await query.message.reply_text(
-            "Serwer chwilowo niedostępny. Spróbuj za chwilę."
-        )
+        await query.message.reply_text("Serwer chwilowo niedostępny. Spróbuj za chwilę.")
         return
 
     plan_id = query.data.split(":", maxsplit=1)[1]
     invoice = await backend_client.create_invoice(token, plan_id)
     if invoice.get("ok") is False:
-        await query.message.reply_text(
-            "Serwer chwilowo niedostępny. Spróbuj za chwilę."
-        )
+        await query.message.reply_text("Serwer chwilowo niedostępny. Spróbuj za chwilę.")
         return
 
     title = str(invoice.get("title", "Subskrypcja AI Aggregator"))
@@ -97,18 +88,14 @@ async def handle_buy_callback(
     )
 
 
-async def handle_precheckout(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-) -> None:
+async def handle_precheckout(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.pre_checkout_query
     if query is None:
         return
     await query.answer(ok=True)
 
 
-async def handle_successful_payment(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-) -> None:
+async def handle_successful_payment(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not await access_gate(update, context):
         return
 

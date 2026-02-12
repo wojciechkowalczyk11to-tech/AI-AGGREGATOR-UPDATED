@@ -13,9 +13,7 @@ def _has_aiosqlite() -> bool:
     return True
 
 
-pytestmark = pytest.mark.skipif(
-    not _has_aiosqlite(), reason="Brak zależności aiosqlite w środowisku testowym."
-)
+pytestmark = pytest.mark.skipif(not _has_aiosqlite(), reason="Brak zależności aiosqlite w środowisku testowym.")
 
 
 @pytest.mark.asyncio
@@ -24,6 +22,8 @@ async def test_register_endpoint(async_client) -> None:
         "/api/v1/auth/register",
         json={"telegram_chat_id": 818181},
     )
+    if response.status_code != 200:
+        print(response.json())
     assert response.status_code == 200
     assert response.json()["telegram_id"] == 818181
 

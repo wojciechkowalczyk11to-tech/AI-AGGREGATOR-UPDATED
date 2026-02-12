@@ -25,11 +25,7 @@ class RagItem(Base):
     stored_path: Mapped[str | None] = mapped_column(Text, nullable=True)
     chunk_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     status: Mapped[str] = mapped_column(String(20), default="pending", nullable=False)
-    metadata_: Mapped[dict[str, Any]] = mapped_column(
-        "metadata", JSON, default=dict, nullable=False
-    )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    metadata_: Mapped[dict[str, Any]] = mapped_column("metadata", JSON, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     user: Mapped["User | None"] = relationship(back_populates="rag_items")

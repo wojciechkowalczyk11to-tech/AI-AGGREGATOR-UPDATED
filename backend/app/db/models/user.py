@@ -39,16 +39,10 @@ class User(Base):
     authorized: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     default_mode: Mapped[str] = mapped_column(String(10), default="eco", nullable=False)
-    settings_: Mapped[dict[str, Any]] = mapped_column(
-        "settings", JSON, default=dict, nullable=False
-    )
+    settings_: Mapped[dict[str, Any]] = mapped_column("settings", JSON, default=dict, nullable=False)
     subscription_tier: Mapped[str] = mapped_column(String(20), default="free", nullable=False)
-    subscription_expires_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    subscription_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     last_seen_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -56,19 +50,9 @@ class User(Base):
         nullable=False,
     )
 
-    sessions: Mapped[list["ChatSession"]] = relationship(
-        back_populates="user", cascade="all, delete-orphan"
-    )
-    usage_ledgers: Mapped[list["UsageLedger"]] = relationship(
-        back_populates="user", cascade="all, delete-orphan"
-    )
-    tool_counters: Mapped[list["ToolCounter"]] = relationship(
-        back_populates="user", cascade="all, delete-orphan"
-    )
+    sessions: Mapped[list["ChatSession"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    usage_ledgers: Mapped[list["UsageLedger"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    tool_counters: Mapped[list["ToolCounter"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     rag_items: Mapped[list["RagItem"]] = relationship(back_populates="user")
-    memories: Mapped[list["UserMemory"]] = relationship(
-        back_populates="user", cascade="all, delete-orphan"
-    )
-    payments: Mapped[list["Payment"]] = relationship(
-        back_populates="user", cascade="all, delete-orphan"
-    )
+    memories: Mapped[list["UserMemory"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    payments: Mapped[list["Payment"]] = relationship(back_populates="user", cascade="all, delete-orphan")

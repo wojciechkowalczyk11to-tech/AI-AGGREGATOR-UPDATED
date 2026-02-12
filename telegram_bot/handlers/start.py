@@ -1,9 +1,8 @@
 from __future__ import annotations
 
+from middleware.access_control import access_gate
 from telegram import Update
 from telegram.ext import ContextTypes
-
-from middleware.access_control import access_gate
 
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

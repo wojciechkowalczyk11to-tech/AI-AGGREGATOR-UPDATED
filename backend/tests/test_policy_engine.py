@@ -59,8 +59,6 @@ async def test_increment_counters(test_session) -> None:
     test_session.add(user)
     await test_session.commit()
     engine = PolicyEngine()
-    await engine.increment_counters(
-        user=user, provider="grok", cost=0.11, smart_credits=2, db=test_session
-    )
+    await engine.increment_counters(user=user, provider="grok", cost=0.11, smart_credits=2, db=test_session)
     limits = await engine.get_remaining_limits(user=user, db=test_session, settings=get_settings())
     assert limits["grok_remaining"] == get_settings().DEMO_GROK_DAILY - 1

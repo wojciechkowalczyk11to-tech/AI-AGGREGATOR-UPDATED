@@ -25,8 +25,6 @@ class ToolCounter(Base):
     web_calls: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     smart_credits_used: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     vertex_queries: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    total_cost_usd: Mapped[Decimal] = mapped_column(
-        Numeric(12, 6), default=Decimal("0"), nullable=False
-    )
+    total_cost_usd: Mapped[Decimal] = mapped_column(Numeric(12, 6), default=Decimal("0"), nullable=False)
 
     user: Mapped["User"] = relationship(back_populates="tool_counters")

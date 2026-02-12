@@ -2,15 +2,14 @@ from __future__ import annotations
 
 import asyncio
 
-from sqlalchemy import select
-
 from app.core.config import get_settings
 from app.db.models.user import User, UserRole
 from app.db.session import get_session_factory
+from sqlalchemy import select
 
 
 def parse_ids(raw_value: str) -> list[int]:
-    return [int(item.strip()) for item in raw_value.split(',') if item.strip()]
+    return [int(item.strip()) for item in raw_value.split(",") if item.strip()]
 
 
 async def seed_users() -> None:
@@ -34,5 +33,5 @@ async def seed_users() -> None:
         await session.commit()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(seed_users())
