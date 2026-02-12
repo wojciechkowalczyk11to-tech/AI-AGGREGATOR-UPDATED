@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -22,41 +22,53 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     settings = get_settings()
     setup_logging(level=settings.LOG_LEVEL, json_mode=settings.LOG_JSON)
-    logger.info('Backend starting up')
-
     app.state.started_at = datetime.now(tz=timezone.utc)
+    app.state.redis = None
 
     try:
-        redis_client = Redis.from_url(settings.REDIS_URL, decode_responses=True)
-        await redis_client.ping()
-        app.state.redis = redis_client
-        logger.info('Redis connected')
+        app.state.redis = Redis.from_url(settings.REDIS_URL, decode_responses=True)
+        await app.state.redis.ping()
     except Exception:
-        logger.warning('Redis unavailable at startup')
+        logger.warning("Nie udało się połączyć z Redis podczas uruchamiania.", exc_info=True)
         app.state.redis = None
 
     try:
         await init_db()
-        logger.info('Database initialized')
-    except Exception:
-        logger.error('Database initialization failed', exc_info=True)
-        raise
+        logger.info("Backend started")
+        yield
+    finally:
+        redis_client: Redis | None = getattr(app.state, "redis", None)
+        if redis_client is not None:
+            try:
+                await redis_client.aclose()
+            except Exception:
+                logger.warning("Nie udało się poprawnie zamknąć połączenia Redis.", exc_info=True)
 
-    yield
+        try:
+            await get_engine().dispose()
+        except Exception:
+            logger.warning("Nie udało się poprawnie zamknąć silnika bazy danych.", exc_info=True)
 
-    if app.state.redis is not None:
-        await app.state.redis.aclose()
-    engine = get_engine()
-    await engine.dispose()
-    logger.info('Backend shut down')
+        logger.info("Backend stopped")
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title='JARVIS AI Aggregator', version='0.1.0', lifespan=lifespan)
-    app.include_router(api_router, prefix='/api/v1')
+    app = FastAPI(
+        title="JARVIS AI Aggregator",
+        version="0.1.0",
+        lifespan=lifespan,
+    )
+    app.include_router(api_router, prefix="/api/v1")
 
     @app.exception_handler(JarvisBaseError)
     async def jarvis_error_handler(request: Request, exc: JarvisBaseError) -> JSONResponse:
-        return JSONResponse(status_code=exc.status_code, content={'detail': exc.detail})
+        _ = request
+        payload: dict[str, Any] = {
+            "error": {
+                "type": exc.__class__.__name__,
+                "detail": exc.detail,
+            }
+        }
+        return JSONResponse(status_code=exc.status_code, content=payload)
 
     return app
