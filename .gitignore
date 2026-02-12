@@ -1,4 +1,10 @@
 __pycache__/
-*.py[cod]
-.pytest_cache/
+*.pyc
 .env
+.pytest_cache/
+alembic/versions/*.pyc
+node_modules/
+.venv/
+*.egg-info/
+dist/
+htmlcov/
