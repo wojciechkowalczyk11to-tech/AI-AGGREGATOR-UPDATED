@@ -5,4 +5,4 @@ WORKDIR /app
 COPY pyproject.toml /app/pyproject.toml
 RUN pip install --no-cache-dir .
 COPY . /app
-CMD ["uvicorn", "backend.app.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]
