@@ -9,7 +9,9 @@ fi
 
 docker compose -f infra/docker-compose.yml up -d postgres redis
 sleep 5
-PYTHONPATH=backend alembic upgrade head
+cd backend
+PYTHONPATH=. alembic -c alembic.ini upgrade head
+cd ..
 PYTHONPATH=backend python scripts/seed_users.py
 
 echo 'Bootstrap complete'

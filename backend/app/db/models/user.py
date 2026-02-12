@@ -50,7 +50,10 @@ class User(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
     last_seen_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
     )
 
     sessions: Mapped[list["ChatSession"]] = relationship(

@@ -45,6 +45,9 @@ class TestUserModelSchema:
         assert UserRole.DEMO.value == "DEMO"
         assert UserRole.FULL_ACCESS.value == "FULL_ACCESS"
 
+    def test_user_last_seen_at_has_onupdate(self) -> None:
+        assert User.__table__.c.last_seen_at.onupdate is not None
+
 
 class TestSessionModelSchema:
     def test_session_has_expected_columns(self) -> None:
