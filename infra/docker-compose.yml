@@ -11,12 +11,27 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      backend_migrate:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 15s
+    networks:
+      - jarvis_net
+
+
+  backend_migrate:
+    restart: "no"
+    build: ../backend
+    env_file:
+      - ../.env
+    command: ["alembic", "-c", "alembic.ini", "upgrade", "head"]
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - jarvis_net
 

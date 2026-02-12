@@ -28,6 +28,13 @@ AI Aggregator is a Telegram-first AI bot platform with a FastAPI backend and pro
    docker compose -f infra/docker-compose.yml up --build
    ```
 
+## Manual migrations
+Run Alembic from the backend directory (single source of truth: `backend/alembic.ini`):
+
+```bash
+cd backend && PYTHONPATH=. alembic -c alembic.ini upgrade head
+```
+
 ## Project Structure
 - `backend/` — FastAPI app, database layer, providers, workers, alembic migrations.
 - `telegram_bot/` — existing Telegram bot codebase kept as-is for phase 1 migration.
