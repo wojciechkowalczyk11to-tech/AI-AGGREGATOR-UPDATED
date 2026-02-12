@@ -94,3 +94,38 @@ class UsageLimitsResponse(BaseModel):
     grok_remaining: int
     smart_credits_remaining: int
     daily_budget_remaining: float
+
+
+class PlanListResponse(BaseModel):
+    plans: list[dict[str, Any]]
+
+
+class PaymentInvoiceRequest(BaseModel):
+    plan_id: str
+
+
+class PaymentConfirmRequest(BaseModel):
+    plan_id: str
+    stars_amount: int
+    telegram_charge_id: str
+
+
+class PaymentRefundRequest(BaseModel):
+    payment_id: str
+
+
+class PaymentResponse(BaseModel):
+    id: str
+    user_id: str
+    plan: str
+    stars_amount: int
+    currency: str
+    status: str
+    expires_at: str | None
+
+
+class PaymentSubscriptionResponse(BaseModel):
+    active: bool
+    tier: str
+    expires_at: str | None
+    plan_details: dict[str, Any] | None
