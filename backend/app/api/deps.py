@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import uuid
 from collections.abc import AsyncGenerator
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from redis.asyncio import Redis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -26,18 +28,31 @@ async def get_current_user(
 ) -> User:
     try:
         payload = verify_token(credentials.credentials)
+        subject = payload.get("sub")
+        if subject is None:
+            raise ValueError("Brak pola sub")
+        user_id = uuid.UUID(str(subject))
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Nieprawidłowy token"
+        ) from exc
+
+    try:
+        result = await db.execute(select(User).where(User.id == user_id))
+        user = result.scalar_one_or_none()
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication token",
+            detail="Błąd weryfikacji użytkownika",
         ) from exc
 
-    telegram_id = payload.get("sub")
-    if telegram_id is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload")
-
-    result = await db.execute(select(User).where(User.telegram_id == int(telegram_id)))
-    user = result.scalar_one_or_none()
     if user is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Użytkownik nie istnieje"
+        )
+
     return user
+
+
+async def get_redis(request: Request) -> Redis | None:
+    return getattr(request.app.state, "redis", None)
