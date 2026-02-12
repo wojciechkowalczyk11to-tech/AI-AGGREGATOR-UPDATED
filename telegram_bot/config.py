@@ -6,6 +6,12 @@ from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+def _get_default_backend_url() -> str:
+    if os.getenv("RUNNING_IN_DOCKER", "0") == "1":
+        return "http://backend:8000"
+    return "http://localhost:8000"
+
+
 class BotSettings(BaseSettings):
     telegram_bot_token: str = Field(..., description="Telegram Bot Token")
     telegram_mode: str = Field("polling", description="'polling' or 'webhook'")
@@ -14,9 +20,7 @@ class BotSettings(BaseSettings):
     webhook_path: str = Field("webhook", description="URL path for webhooks")
     webhook_secret_token: str = Field("", description="Secret token for webhook")
     backend_url: str = Field(
-        default_factory=lambda: "http://backend:8000"
-        if os.getenv("RUNNING_IN_DOCKER", "0") == "1"
-        else "http://localhost:8000",
+        default_factory=_get_default_backend_url,
         description="URL of the backend",
     )
     allowed_user_ids: list[int] = Field(default_factory=list, description="Allowed IDs")
