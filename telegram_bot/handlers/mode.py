@@ -5,6 +5,8 @@ from telegram.ext import ContextTypes
 
 from middleware.access_control import access_gate
 
+VALID_MODES = {"eco", "smart", "deep"}
+
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not await access_gate(update, context):
@@ -18,14 +20,14 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await message.reply_text("Brak dostępu. Użyj /unlock <kod>")
         return
 
-    await message.reply_text(
-        "Dostępne komendy:\n"
-        "/start — uruchamia bota\n"
-        "/help — pokazuje tę pomoc\n"
-        "/unlock <kod> — odblokowuje konto\n"
-        "/whoami — pokazuje dane konta\n"
-        "/mode <eco|smart|deep> — zmienia tryb odpowiedzi\n"
-        "/usage — pokazuje limity i użycie\n"
-        "/subscribe — kup plan\n"
-        "/plan — pokazuje aktywny plan"
-    )
+    if not context.args:
+        await message.reply_text("Użycie: /mode <eco|smart|deep>")
+        return
+
+    mode = context.args[0].lower()
+    if mode not in VALID_MODES:
+        await message.reply_text("Nieprawidłowy tryb. Użyj: eco, smart lub deep.")
+        return
+
+    context.user_data["mode"] = mode
+    await message.reply_text(f"Tryb zmieniony na {mode}.")

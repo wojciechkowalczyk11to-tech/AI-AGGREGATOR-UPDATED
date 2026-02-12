@@ -1,27 +1,40 @@
 from __future__ import annotations
-import logging, sys, json
-from telegram.ext import ApplicationBuilder
+
+import sys
+
+from telegram.ext import Application, ApplicationBuilder
+
 from config import settings
 from handlers import register_all_handlers
-from services.auth_service import AuthService
-from services.chat_service import ChatService
-from services.rag_service import RagService
-from services.analytics_service import AnalyticsService
-from services.image_service import ImageService
-from services.agent_service import AgentService
-from services.admin_service import AdminService
-from services.provider_policy_service import ProviderPolicyService
-def main():
-    if not settings: sys.exit(1)
-    app = ApplicationBuilder().token(settings.telegram_bot_token).build()
-    base = settings.backend_url
-    app.bot_data.update({
-        "auth_service": AuthService(base), "chat_service": ChatService(base),
-        "rag_service": RagService(base), "analytics_service": AnalyticsService(base),
-        "image_service": ImageService(base), "agent_service": AgentService(base),
-        "admin_service": AdminService(base), "policy_service": ProviderPolicyService.from_env(),
-        "settings": settings
-    })
+from services.backend_client import BackendClient
+
+
+async def _post_init(app: Application) -> None:
+    app.bot_data["backend_client"] = BackendClient(app.bot_data["settings"].backend_url)
+
+
+async def _post_shutdown(app: Application) -> None:
+    backend_client = app.bot_data.get("backend_client")
+    if isinstance(backend_client, BackendClient):
+        await backend_client.close()
+
+
+def main() -> None:
+    if not settings:
+        sys.exit(1)
+
+    app = (
+        ApplicationBuilder()
+        .token(settings.telegram_bot_token)
+        .post_init(_post_init)
+        .post_shutdown(_post_shutdown)
+        .build()
+    )
+    app.bot_data["settings"] = settings
+
     register_all_handlers(app)
     app.run_polling()
-if __name__ == "__main__": main()
+
+
+if __name__ == "__main__":
+    main()

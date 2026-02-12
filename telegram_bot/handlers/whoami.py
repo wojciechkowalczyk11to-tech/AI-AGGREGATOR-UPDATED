@@ -25,21 +25,19 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await message.reply_text("Serwer chwilowo niedostępny. Spróbuj za chwilę.")
         return
 
-    usage = await backend_client.get_usage(token, 30)
-    limits = await backend_client.get_limits(token)
-    if usage.get("ok") is False or limits.get("ok") is False:
+    me = await backend_client.get_me(token)
+    if me.get("ok") is False:
         await message.reply_text("Serwer chwilowo niedostępny. Spróbuj za chwilę.")
         return
 
-    daily_cost = float(usage.get("daily_cost", usage.get("today_cost", 0.0)))
-    monthly_total = float(usage.get("monthly_total", usage.get("month_cost", 0.0)))
-    remaining_requests = int(limits.get("remaining_requests", 0))
-    remaining_budget = float(limits.get("remaining_budget", 0.0))
+    role = str(me.get("role", "DEMO"))
+    authorized = "tak" if bool(me.get("authorized", False)) else "nie"
+    plan = str(me.get("subscription_tier", me.get("plan", "free")))
+    default_mode = str(me.get("default_mode", "smart"))
 
     await message.reply_text(
-        "📊 Twoje użycie:\n"
-        f"• Dzisiejszy koszt: ${daily_cost:.4f}\n"
-        f"• Pozostałe zapytania: {remaining_requests}\n"
-        f"• Pozostały budżet: ${remaining_budget:.4f}\n"
-        f"• Suma w tym miesiącu: ${monthly_total:.4f}"
+        f"Rola: {role}\n"
+        f"Autoryzacja: {authorized}\n"
+        f"Plan: {plan}\n"
+        f"Tryb domyślny: {default_mode}"
     )
