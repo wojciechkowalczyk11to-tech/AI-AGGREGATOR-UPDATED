@@ -7,10 +7,18 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.circuit_breaker import CircuitBreaker
 from app.core.config import get_settings
-from app.core.exceptions import JarvisBaseError, PolicyDeniedError, ProviderError
-from app.db.models import ChatSession, Message, User
+from app.core.exceptions import (
+    AllProvidersFailedError,
+    JarvisBaseError,
+    PolicyDeniedError,
+    ProviderError,
+)
+from app.db.models import ChatSession, Message, User, UserRole
+from app.providers.base import ProviderResult
 from app.providers.factory import ProviderFactory
+from app.services.model_router import ModelRouter
 from app.services.policy_engine import PolicyEngine, policy_engine
 from app.services.usage_service import UsageService, usage_service
 
@@ -21,10 +29,12 @@ class Orchestrator:
         policy_engine_instance: PolicyEngine,
         provider_factory: ProviderFactory,
         usage_service_instance: UsageService,
+        model_router: ModelRouter | None = None,
     ) -> None:
         self._policy_engine = policy_engine_instance
         self._provider_factory = provider_factory
         self._usage_service = usage_service_instance
+        self._model_router = model_router or ModelRouter()
 
     async def process_chat(
         self,
@@ -36,9 +46,8 @@ class Orchestrator:
         db: AsyncSession,
     ) -> dict[str, Any]:
         settings = get_settings()
-        access = await self._policy_engine.check_access(
-            user, provider_pref or "gemini", db, settings
-        )
+        requested_provider = (provider_pref or "gemini").lower()
+        access = await self._policy_engine.check_access(user, requested_provider, db, settings)
         if not access.allowed:
             raise PolicyDeniedError(access.denied_reason or "Brak dostępu")
 
@@ -46,17 +55,29 @@ class Orchestrator:
         history = await self._get_history(session.id, db)
         messages = history + [{"role": "user", "content": prompt}]
 
-        selected_provider = (provider_pref or "gemini").lower()
-        provider = self._provider_factory.get(selected_provider)
-        if provider is None:
-            raise ProviderError("Provider jest niedostępny")
-
-        provider_result = await provider.generate(
-            messages=messages,
-            profile=mode,
-            max_tokens=1200,
-            temperature=0.7,
+        selected_mode = self._resolve_mode(
+            user=user, prompt=prompt, mode=mode, budget=access.budget_remaining
         )
+        selected_mode, routing_note = await self._apply_demo_credit_fallback(
+            user=user,
+            mode=selected_mode,
+            db=db,
+            settings=settings,
+        )
+
+        provider_result = await self._run_with_fallback_chain(
+            user=user,
+            provider_pref=provider_pref,
+            mode=selected_mode,
+            messages=messages,
+        )
+
+        smart_credits = 0
+        if selected_mode in {"smart", "deep"}:
+            smart_credits = self._model_router.calculate_smart_credits(
+                provider_result.input_tokens,
+                provider_result.output_tokens,
+            )
 
         await self._usage_service.log_request(
             db=db,
@@ -64,7 +85,7 @@ class Orchestrator:
             session_id=session.id,
             provider=provider_result.provider,
             model=provider_result.model,
-            profile=mode,
+            profile=selected_mode,
             input_tokens=provider_result.input_tokens,
             output_tokens=provider_result.output_tokens,
             cost_usd=provider_result.cost_usd,
@@ -72,7 +93,6 @@ class Orchestrator:
             fallback_used=provider_result.fallback_used,
         )
 
-        smart_credits = 1 if mode in {"smart", "deep"} else 0
         await self._policy_engine.increment_counters(
             user=user,
             provider=provider_result.provider,
@@ -81,10 +101,14 @@ class Orchestrator:
             db=db,
         )
 
-        await self._save_messages(session=session, prompt=prompt, reply=provider_result.text, db=db)
+        reply_text = provider_result.text
+        if routing_note:
+            reply_text = f"{routing_note}\n\n{reply_text}"
+
+        await self._save_messages(session=session, prompt=prompt, reply=reply_text, db=db)
 
         return {
-            "response": provider_result.text,
+            "response": reply_text,
             "meta": {
                 "model": provider_result.model,
                 "provider": provider_result.provider,
@@ -93,9 +117,82 @@ class Orchestrator:
                 "output_tokens": provider_result.output_tokens,
                 "latency_ms": provider_result.latency_ms,
                 "fallback_used": provider_result.fallback_used,
+                "profile": selected_mode,
             },
             "session_id": str(session.id),
         }
+
+    async def _run_with_fallback_chain(
+        self,
+        user: User,
+        provider_pref: str | None,
+        mode: str,
+        messages: list[dict[str, str]],
+    ) -> ProviderResult:
+        chain = (
+            [provider_pref.lower()]
+            if provider_pref
+            else self._policy_engine.get_provider_chain(user=user, profile=mode)
+        )
+        errors: list[str] = []
+
+        for provider_name in chain:
+            provider = self._provider_factory.get(provider_name)
+            if provider is None:
+                errors.append(f"Provider {provider_name} jest niedostępny")
+                continue
+
+            breaker = CircuitBreaker(provider_name)
+            if breaker.is_open():
+                errors.append(f"Provider {provider_name} jest tymczasowo niedostępny")
+                continue
+
+            try:
+                result = await provider.generate(
+                    messages=messages,
+                    profile=mode,
+                    max_tokens=1200,
+                    temperature=0.7,
+                )
+                breaker.record_success()
+                if provider_name != chain[0]:
+                    result.fallback_used = True
+                return result
+            except ProviderError as exc:
+                breaker.record_failure()
+                errors.append(exc.detail)
+
+        raise AllProvidersFailedError(
+            "Wszyscy providerzy zawiedli. Spróbuj ponownie później. " + "; ".join(errors)
+        )
+
+    async def _apply_demo_credit_fallback(
+        self,
+        user: User,
+        mode: str,
+        db: AsyncSession,
+        settings: Any,
+    ) -> tuple[str, str | None]:
+        if user.role != UserRole.DEMO or mode not in {"smart", "deep"}:
+            return mode, None
+
+        remaining = await self._policy_engine.get_remaining_limits(
+            user=user, db=db, settings=settings
+        )
+        if int(remaining["smart_credits_remaining"]) > 0:
+            return mode, None
+        return "eco", "⚠️ Kredyty SMART wyczerpane, użyto trybu ECO."
+
+    def _resolve_mode(self, user: User, prompt: str, mode: str, budget: float) -> str:
+        if mode.lower() != "auto":
+            return mode.lower()
+        difficulty = self._model_router.classify_difficulty(prompt)
+        return self._model_router.select_profile(
+            difficulty=difficulty,
+            user_mode=mode,
+            user_role=user.role.value,
+            budget_remaining=budget,
+        )
 
     async def _get_or_create_session(
         self,
