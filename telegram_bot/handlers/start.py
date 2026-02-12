@@ -1,4 +1,25 @@
 from __future__ import annotations
-from keyboards.main_menu import get_main_menu_keyboard
-async def handle(update, context):
-    await update.message.reply_text(f"👋 Witaj {update.effective_user.first_name}! Wybierz model i zacznij rozmowę.", reply_markup=get_main_menu_keyboard())
+
+from telegram import Update
+from telegram.ext import ContextTypes
+
+from middleware.access_control import access_gate
+
+
+async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not await access_gate(update, context):
+        return
+
+    message = update.effective_message
+    if message is None:
+        return
+
+    is_new = bool(context.user_data.get("_just_registered", False))
+    if is_new:
+        await message.reply_text(
+            "Witaj! Aby odblokować dostęp, użyj komendy /unlock <kod>. "
+            "Po odblokowaniu możesz użyć /help, aby zobaczyć komendy."
+        )
+        return
+
+    await message.reply_text("Witaj ponownie! Użyj /help aby zobaczyć komendy.")
