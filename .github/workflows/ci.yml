@@ -1,0 +1,91 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install ruff
+        run: pip install ruff
+      - name: Ruff check
+        run: ruff check backend/ telegram_bot/
+      - name: Ruff format check
+        run: ruff format --check backend/ telegram_bot/
+
+  test-backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U test -d test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql+asyncpg://test:test@localhost:5432/test
+      REDIS_URL: redis://localhost:6379/0
+      JWT_SECRET_KEY: test-ci-key
+      DEMO_UNLOCK_CODE: test123
+      BOOTSTRAP_ADMIN_CODE: admin123
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install backend dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ./backend
+          pip install pytest pytest-asyncio aiosqlite
+      - name: Run backend tests
+        run: pytest backend/tests/ -v --tb=short
+
+  test-bot:
+    runs-on: ubuntu-latest
+    env:
+      TELEGRAM_BOT_TOKEN: test
+      BACKEND_URL: http://localhost:8000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install bot dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r telegram_bot/requirements.txt
+          pip install pytest pytest-asyncio
+      - name: Run bot tests
+        run: pytest telegram_bot/tests/ -v --tb=short
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detect secrets
+        run: >-
+          ! grep -rn 'sk-[a-zA-Z0-9]\{20,\}\|ghp_\|AIza\|AKIA' --include='*.py' backend/ telegram_bot/
+      - name: Detect forbidden notes
+        run: >-
+          ! grep -rn 'TODO\|FIXME\|HACK' --include='*.py' backend/ telegram_bot/ | grep -v test_ | grep -v __pycache__

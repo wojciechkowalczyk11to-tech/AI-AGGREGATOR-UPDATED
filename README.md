@@ -1,43 +1,48 @@
-# AI Aggregator Telegram Bot
+# JARVIS AI Aggregator
 
-AI Aggregator is a Telegram-first AI bot platform with a FastAPI backend and provider integrations.
+JARVIS AI Aggregator to Telegram-first bot, który agreguje wielu dostawców LLM i udostępnia ich przez jeden spójny interfejs czatu.
 
-## Tech Stack
-- Python 3.12+
+## Najważniejsze funkcje
+
+- Multi-provider: Gemini, DeepSeek, Groq, OpenRouter, Grok.
+- RBAC (DEMO i FULL_ACCESS) z kontrolą uprawnień.
+- Płatności Telegram Stars i obsługa planów.
+- Auto-routing modeli i fallback między providerami.
+- Circuit breaker dla niestabilnych integracji.
+- Tracking użycia i kosztów per użytkownik.
+
+## Quick Start
+
+1. Sklonuj repozytorium.
+2. Skopiuj konfigurację: `cp .env.example .env`.
+3. Uzupełnij klucze API i zmienne środowiskowe.
+4. Uruchom usługi: `docker compose up`.
+
+## Komendy Telegram
+
+- `/start`
+- `/unlock`
+- `/help`
+- `/mode`
+- `/whoami`
+- `/usage`
+- `/subscribe`
+- `/plan`
+- `/admin`
+- `/invite`
+
+## Stack technologiczny
+
 - FastAPI
-- SQLAlchemy 2.0 (async)
+- python-telegram-bot
 - PostgreSQL
 - Redis
-- Alembic
-- Telegram bot runtime
-- Docker Compose
+- Docker
 
-## Setup
-1. Clone the repository.
-2. Copy env file:
-   ```bash
-   cp .env.example .env
-   ```
-3. Fill in `.env` values.
-4. Bootstrap services:
-   ```bash
-   ./scripts/bootstrap.sh
-   ```
-5. Start full stack:
-   ```bash
-   docker compose -f infra/docker-compose.yml up --build
-   ```
+## Architektura
 
-## Manual migrations
-Run Alembic from the backend directory (single source of truth: `backend/alembic.ini`):
+Monorepo zawiera trzy główne obszary:
 
-```bash
-cd backend && PYTHONPATH=. alembic -c alembic.ini upgrade head
-```
-
-## Project Structure
-- `backend/` — FastAPI app, database layer, providers, workers, alembic migrations.
-- `telegram_bot/` — existing Telegram bot codebase kept as-is for phase 1 migration.
-- `infra/` — docker compose files.
-- `scripts/` — bootstrap, lint, tests, seed scripts.
-- `docs/` — project documentation and future plans.
+- `backend/` — API, logika biznesowa, modele, migracje.
+- `telegram_bot/` — bot Telegram i warstwa integracyjna.
+- `infra/` — pliki docker-compose i konfiguracja uruchomieniowa.
