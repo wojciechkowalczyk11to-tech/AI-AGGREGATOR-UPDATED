@@ -39,17 +39,13 @@ async def unlock(
 
 
 @router.post("/bootstrap", response_model=BootstrapResponse)
-async def bootstrap(
-    payload: BootstrapRequest, db: AsyncSession = Depends(get_db)
-) -> BootstrapResponse:
+async def bootstrap(payload: BootstrapRequest, db: AsyncSession = Depends(get_db)) -> BootstrapResponse:
     data = await auth_service.bootstrap(payload.telegram_chat_id, payload.bootstrap_code, db)
     return BootstrapResponse(**data)
 
 
 @router.get("/me", response_model=MeResponse)
-async def me(
-    current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)
-) -> MeResponse:
+async def me(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)) -> MeResponse:
     data = await auth_service.get_me(current_user.id, db)
     return MeResponse(**data)
 

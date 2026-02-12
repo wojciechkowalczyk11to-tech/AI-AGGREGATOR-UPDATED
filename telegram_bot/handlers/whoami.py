@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from telegram import Update
-from telegram.ext import ContextTypes
-
 from middleware.access_control import access_gate
 from services.backend_client import BackendClient
+from telegram import Update
+from telegram.ext import ContextTypes
 
 
 async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -35,9 +34,4 @@ async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     plan = str(me.get("subscription_tier", me.get("plan", "free")))
     default_mode = str(me.get("default_mode", "smart"))
 
-    await message.reply_text(
-        f"Rola: {role}\n"
-        f"Autoryzacja: {authorized}\n"
-        f"Plan: {plan}\n"
-        f"Tryb domyślny: {default_mode}"
-    )
+    await message.reply_text(f"Rola: {role}\nAutoryzacja: {authorized}\nPlan: {plan}\nTryb domyślny: {default_mode}")

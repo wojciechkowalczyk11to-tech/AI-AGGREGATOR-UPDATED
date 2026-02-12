@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import datetime, time, timedelta, timezone
 from decimal import Decimal
 from typing import Any
 
@@ -85,15 +85,11 @@ class PolicyEngine:
         if user.subscription_tier == "free" and provider_name == "grok":
             used = counter.grok_calls if counter else 0
             if used >= settings.DEMO_GROK_DAILY:
-                return PolicyResult(
-                    False, "Przekroczono limit", "Spróbuj providera gemini", budget_remaining
-                )
+                return PolicyResult(False, "Przekroczono limit", "Spróbuj providera gemini", budget_remaining)
 
         if user.subscription_tier == "free" and not limits["smart_unlimited"]:
             if (counter.smart_credits_used if counter else 0) >= settings.DEMO_SMART_CREDITS_DAILY:
-                return PolicyResult(
-                    False, "Przekroczono limit", "Przełącz na tryb eco", budget_remaining
-                )
+                return PolicyResult(False, "Przekroczono limit", "Przełącz na tryb eco", budget_remaining)
 
         if limits["gpt_daily"] is not None and provider_name == "openai":
             used_openai = await self._get_provider_usage_today(user.id, "openai", db)
@@ -129,9 +125,7 @@ class PolicyEngine:
             "github": user.role == UserRole.FULL_ACCESS,
         }
 
-        subscription_tier = (
-            user.subscription_tier if user.subscription_tier in self.SUBSCRIPTION_LIMITS else "free"
-        )
+        subscription_tier = user.subscription_tier if user.subscription_tier in self.SUBSCRIPTION_LIMITS else "free"
         if subscription_tier == "free":
             limits["allowed_providers"] = set(self.PROVIDER_ACCESS[UserRole.DEMO].keys())
             limits["github"] = False
@@ -176,16 +170,16 @@ class PolicyEngine:
     ) -> None:
         counter = await self._get_today_counter(user.id, db)
         if counter is None:
-            counter = ToolCounter(user_id=user.id, date=date.today())
+            counter = ToolCounter(user_id=user.id, date=datetime.now(timezone.utc).date())
             db.add(counter)
 
         if provider.lower() == "grok":
-            counter.grok_calls += 1
+            counter.grok_calls = (counter.grok_calls or 0) + 1
         if provider.lower() in {"openrouter", "gemini"}:
-            counter.web_calls += 1
+            counter.web_calls = (counter.web_calls or 0) + 1
 
-        counter.smart_credits_used += smart_credits
-        counter.total_cost_usd = Decimal(counter.total_cost_usd) + Decimal(str(cost))
+        counter.smart_credits_used = (counter.smart_credits_used or 0) + smart_credits
+        counter.total_cost_usd = Decimal(counter.total_cost_usd or 0) + Decimal(str(cost))
         await db.commit()
 
     async def get_remaining_limits(
@@ -200,9 +194,7 @@ class PolicyEngine:
         used_cost = float(counter.total_cost_usd if counter else Decimal("0"))
         limits = self.get_effective_limits(user)
         smart_remaining = (
-            999999
-            if limits["smart_unlimited"]
-            else max(settings.DEMO_SMART_CREDITS_DAILY - used_credits, 0)
+            999999 if limits["smart_unlimited"] else max(settings.DEMO_SMART_CREDITS_DAILY - used_credits, 0)
         )
         return {
             "grok_remaining": max(settings.DEMO_GROK_DAILY - used_grok, 0),
@@ -227,7 +219,8 @@ class PolicyEngine:
     async def _get_today_counter(self, user_id: Any, db: AsyncSession) -> ToolCounter | None:
         result = await db.execute(
             select(ToolCounter).where(
-                ToolCounter.user_id == user_id, ToolCounter.date == date.today()
+                ToolCounter.user_id == user_id,
+                ToolCounter.date == datetime.now(timezone.utc).date(),
             )
         )
         return result.scalar_one_or_none()

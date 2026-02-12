@@ -20,9 +20,7 @@ class ChatSession(Base):
     __table_args__ = (Index("ix_sessions_user_id", "user_id"),)
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"), nullable=False
-    )
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     mode: Mapped[str] = mapped_column(String(10), default="eco", nullable=False)
     provider_pref: Mapped[str | None] = mapped_column(String(50), nullable=True)
@@ -30,15 +28,9 @@ class ChatSession(Base):
     snapshot_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     snapshot_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     message_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
-    last_active_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    last_active_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     user: Mapped["User"] = relationship(back_populates="sessions")
-    messages: Mapped[list["Message"]] = relationship(
-        back_populates="session", cascade="all, delete-orphan"
-    )
+    messages: Mapped[list["Message"]] = relationship(back_populates="session", cascade="all, delete-orphan")
     usage_ledgers: Mapped[list["UsageLedger"]] = relationship(back_populates="session")

@@ -85,23 +85,17 @@ async def refund_payment(
     try:
         payment_id = uuid.UUID(payload.payment_id)
     except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Nieprawidłowe ID płatności"
-        ) from exc
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nieprawidłowe ID płatności") from exc
 
     result = await db.execute(select(Payment).where(Payment.id == payment_id))
     payment = result.scalar_one_or_none()
     if payment is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Nie znaleziono płatności"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Nie znaleziono płatności")
 
     is_owner = payment.user_id == current_user.id
     is_admin = current_user.role == UserRole.FULL_ACCESS
     if not is_owner and not is_admin:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Brak uprawnień do zwrotu"
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Brak uprawnień do zwrotu")
 
     try:
         refunded = await payment_service.refund(payment_id, db)

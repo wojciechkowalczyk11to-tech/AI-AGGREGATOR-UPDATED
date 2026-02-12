@@ -62,15 +62,11 @@ class GeminiProvider(AbstractProvider):
             raise ProviderError("Błąd wywołania providera Gemini") from exc
 
         latency_ms = int((time.perf_counter() - start) * 1000)
-        text = (
-            data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-        )
+        text = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
         usage = data.get("usageMetadata", {})
         input_tokens = int(usage.get("promptTokenCount", 0))
         output_tokens = int(usage.get("candidatesTokenCount", 0))
-        cost = self._calculate_cost(
-            model=model, input_tokens=input_tokens, output_tokens=output_tokens
-        )
+        cost = self._calculate_cost(model=model, input_tokens=input_tokens, output_tokens=output_tokens)
 
         return ProviderResult(
             text=text,

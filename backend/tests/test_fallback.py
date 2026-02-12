@@ -57,6 +57,76 @@ class SuccessProvider(AbstractProvider):
         return True
 
 
+class SuccessGeminiProvider(AbstractProvider):
+    @property
+    def name(self) -> str:
+        return "gemini"
+
+    async def generate(
+        self,
+        messages: list[dict[str, str]],
+        profile: str,
+        max_tokens: int,
+        temperature: float,
+    ) -> ProviderResult:
+        return ProviderResult(
+            text="Odpowiedź zapasowa",
+            provider="gemini",
+            model="gemini-2.0-flash-lite",
+            input_tokens=50,
+            output_tokens=30,
+            cost_usd=0.0,
+            latency_ms=12,
+        )
+
+    async def health_check(self) -> bool:
+        return True
+
+
+class FailingGeminiProvider(AbstractProvider):
+    @property
+    def name(self) -> str:
+        return "gemini"
+
+    async def generate(
+        self,
+        messages: list[dict[str, str]],
+        profile: str,
+        max_tokens: int,
+        temperature: float,
+    ) -> ProviderResult:
+        raise ProviderError("Gemini failed")
+
+    async def health_check(self) -> bool:
+        return False
+
+
+class SuccessDeepseekProvider(AbstractProvider):
+    @property
+    def name(self) -> str:
+        return "deepseek"
+
+    async def generate(
+        self,
+        messages: list[dict[str, str]],
+        profile: str,
+        max_tokens: int,
+        temperature: float,
+    ) -> ProviderResult:
+        return ProviderResult(
+            text="Odpowiedź z Deepseek",
+            provider="deepseek",
+            model="deepseek-chat",
+            input_tokens=50,
+            output_tokens=30,
+            cost_usd=0.0,
+            latency_ms=12,
+        )
+
+    async def health_check(self) -> bool:
+        return True
+
+
 @pytest.mark.asyncio
 async def test_primary_fails_secondary_succeeds(test_session) -> None:
     user = User(telegram_id=4101, role=UserRole.DEMO, authorized=True)
@@ -64,7 +134,11 @@ async def test_primary_fails_secondary_succeeds(test_session) -> None:
     await test_session.commit()
 
     factory = ProviderFactory.__new__(ProviderFactory)
-    factory._registry = {"deepseek": FailingProvider(), "gemini": SuccessProvider()}  # type: ignore[attr-defined]
+    # Gemini is first in chain, so making it fail should trigger Deepseek
+    factory._registry = {
+        "gemini": FailingGeminiProvider(),
+        "deepseek": SuccessDeepseekProvider(),
+    }  # type: ignore[attr-defined]
     orchestrator = Orchestrator(PolicyEngine(), factory, UsageService())
 
     response = await orchestrator.process_chat(
@@ -76,7 +150,7 @@ async def test_primary_fails_secondary_succeeds(test_session) -> None:
         db=test_session,
     )
 
-    assert response["response"] == "Odpowiedź zapasowa"
+    assert response["response"] == "Odpowiedź z Deepseek"
     assert response["meta"]["fallback_used"] is True
 
 

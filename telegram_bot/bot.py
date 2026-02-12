@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import sys
 
-from telegram.ext import Application, ApplicationBuilder
-
 from config import settings
 from handlers import register_all_handlers
 from services.backend_client import BackendClient
+from telegram.ext import Application, ApplicationBuilder
 
 
 async def _post_init(app: Application) -> None:

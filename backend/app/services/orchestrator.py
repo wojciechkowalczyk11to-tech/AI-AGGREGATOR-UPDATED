@@ -55,9 +55,7 @@ class Orchestrator:
         history = await self._get_history(session.id, db)
         messages = history + [{"role": "user", "content": prompt}]
 
-        selected_mode = self._resolve_mode(
-            user=user, prompt=prompt, mode=mode, budget=access.budget_remaining
-        )
+        selected_mode = self._resolve_mode(user=user, prompt=prompt, mode=mode, budget=access.budget_remaining)
         selected_mode, routing_note = await self._apply_demo_credit_fallback(
             user=user,
             mode=selected_mode,
@@ -162,9 +160,7 @@ class Orchestrator:
                 breaker.record_failure()
                 errors.append(exc.detail)
 
-        raise AllProvidersFailedError(
-            "Wszyscy providerzy zawiedli. Spróbuj ponownie później. " + "; ".join(errors)
-        )
+        raise AllProvidersFailedError("Wszyscy providerzy zawiedli. Spróbuj ponownie później. " + "; ".join(errors))
 
     async def _apply_demo_credit_fallback(
         self,
@@ -176,9 +172,7 @@ class Orchestrator:
         if user.role != UserRole.DEMO or mode not in {"smart", "deep"}:
             return mode, None
 
-        remaining = await self._policy_engine.get_remaining_limits(
-            user=user, db=db, settings=settings
-        )
+        remaining = await self._policy_engine.get_remaining_limits(user=user, db=db, settings=settings)
         if int(remaining["smart_credits_remaining"]) > 0:
             return mode, None
         return "eco", "⚠️ Kredyty SMART wyczerpane, użyto trybu ECO."
@@ -205,9 +199,7 @@ class Orchestrator:
         try:
             if session_id is not None:
                 result = await db.execute(
-                    select(ChatSession).where(
-                        ChatSession.id == session_id, ChatSession.user_id == user.id
-                    )
+                    select(ChatSession).where(ChatSession.id == session_id, ChatSession.user_id == user.id)
                 )
                 found = result.scalar_one_or_none()
                 if found is not None:
@@ -230,10 +222,7 @@ class Orchestrator:
     async def _get_history(self, session_id: uuid.UUID, db: AsyncSession) -> list[dict[str, str]]:
         try:
             result = await db.execute(
-                select(Message)
-                .where(Message.session_id == session_id)
-                .order_by(Message.created_at.desc())
-                .limit(10)
+                select(Message).where(Message.session_id == session_id).order_by(Message.created_at.desc()).limit(10)
             )
             rows = list(reversed(result.scalars().all()))
             return [{"role": item.role, "content": item.content} for item in rows]

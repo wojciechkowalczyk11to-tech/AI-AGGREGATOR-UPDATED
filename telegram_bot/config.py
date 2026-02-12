@@ -1,7 +1,9 @@
 from __future__ import annotations
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field
+
 import os
+
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class BotSettings(BaseSettings):
@@ -28,9 +30,7 @@ class BotSettings(BaseSettings):
     )
     log_level: str = "INFO"
     log_json: bool = True
-    model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", extra="ignore"
-    )
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     @property
     def is_webhook_mode(self) -> bool:

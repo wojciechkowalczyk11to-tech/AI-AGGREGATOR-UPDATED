@@ -19,7 +19,12 @@ class AuthService:
             result = await db.execute(select(User).where(User.telegram_id == telegram_id))
             user = result.scalar_one_or_none()
             if user is None:
-                user = User(telegram_id=telegram_id, role=UserRole.DEMO, authorized=False)
+                user = User(
+                    id=uuid.uuid4(),
+                    telegram_id=telegram_id,
+                    role=UserRole.DEMO,
+                    authorized=False,
+                )
                 db.add(user)
                 await db.commit()
                 await db.refresh(user)
@@ -85,9 +90,7 @@ class AuthService:
             if code != settings.BOOTSTRAP_ADMIN_CODE:
                 return {"success": False}
 
-            result = await db.execute(
-                select(func.count()).select_from(User).where(User.role == UserRole.FULL_ACCESS)
-            )
+            result = await db.execute(select(func.count()).select_from(User).where(User.role == UserRole.FULL_ACCESS))
             full_users = int(result.scalar_one())
             if full_users > 0:
                 return {"success": False}

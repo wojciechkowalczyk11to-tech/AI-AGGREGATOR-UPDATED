@@ -32,9 +32,7 @@ class UsageLedger(Base):
     tool_costs: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
     latency_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     fallback_used: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     user: Mapped["User"] = relationship(back_populates="usage_ledgers")
     session: Mapped["ChatSession | None"] = relationship(back_populates="usage_ledgers")

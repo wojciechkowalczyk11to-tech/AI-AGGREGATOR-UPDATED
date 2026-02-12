@@ -61,9 +61,7 @@ class UsageService:
         except Exception as exc:
             raise JarvisBaseError("Nie udało się pobrać kosztu dziennego", 500) from exc
 
-    async def get_usage_summary(
-        self, user_id: uuid.UUID, days: int, db: AsyncSession
-    ) -> dict[str, Any]:
+    async def get_usage_summary(self, user_id: uuid.UUID, days: int, db: AsyncSession) -> dict[str, Any]:
         threshold = datetime.now(tz=timezone.utc) - timedelta(days=days)
         try:
             result = await db.execute(
